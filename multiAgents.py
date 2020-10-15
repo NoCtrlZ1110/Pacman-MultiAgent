@@ -151,7 +151,41 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.MinimaxSearch(gameState, 1, 0)
+
+    def MinimaxSearch(self, gameState, currentDepth, agentIndex):
+        "terminal check"
+        if currentDepth > self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        "minimax algorithm"
+        legalMoves = [action for action in gameState.getLegalActions(
+            agentIndex) if action != 'Stop']
+
+        # Cập nhật độ sâu tiếp theo
+        nextIndex = agentIndex + 1
+        nextDepth = currentDepth
+        if nextIndex >= gameState.getNumAgents():
+            nextIndex = 0
+            nextDepth += 1
+
+        # Chọn phương án đi tốt nhất
+        results = [self.MinimaxSearch(gameState.generateSuccessor(agentIndex, action),
+                                      nextDepth, nextIndex) for action in legalMoves]
+        if agentIndex == 0 and currentDepth == 1:  # pacman di chuyển lần đầu tiên
+            bestMove = max(results)
+            bestIndices = [index for index in range(
+                len(results)) if results[index] == bestMove]
+            # chọn random
+            chosenIndex = random.choice(bestIndices)
+            return legalMoves[chosenIndex]
+
+        if agentIndex == 0:
+            bestMove = max(results)
+            return bestMove
+        else:
+            bestMove = min(results)
+            return bestMove
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
