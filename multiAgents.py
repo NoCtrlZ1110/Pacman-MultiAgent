@@ -162,21 +162,21 @@ class MinimaxAgent(MultiAgentSearchAgent):
         legalMoves = [action for action in gameState.getLegalActions(
             agentIndex) if action != 'Stop']
 
-        # Cập nhật độ sâu tiếp theo
+        # Cap nhat do sau tiep theo
         nextIndex = agentIndex + 1
         nextDepth = currentDepth
         if nextIndex >= gameState.getNumAgents():
             nextIndex = 0
             nextDepth += 1
 
-        # Chọn phương án đi tốt nhất
+        # Chon phuong an di tot nhat
         results = [self.MinimaxSearch(gameState.generateSuccessor(agentIndex, action),
                                       nextDepth, nextIndex) for action in legalMoves]
-        if agentIndex == 0 and currentDepth == 1:  # pacman di chuyển lần đầu tiên
+        if agentIndex == 0 and currentDepth == 1:  # pacman di chuyen lan dau tien
             bestMove = max(results)
             bestIndices = [index for index in range(
                 len(results)) if results[index] == bestMove]
-            # chọn random
+            # chon random
             chosenIndex = random.choice(bestIndices)
             return legalMoves[chosenIndex]
 
@@ -198,7 +198,70 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        num_of_agents = gameState.getNumAgents()
+        # passing the initial values of alpha and beta as infinity.
+        value, action = self.alpha_value(
+            gameState, float('-inf'), float('inf'), 0, self.depth)
+        return action
+
+    # for pacman
+    def alpha_value(self, state, alpha, beta, agentNumber, depth):
+
+        if state.isWin() or state.isLose():
+            return self.evaluationFunction(state), 'none'
+
+        v = float('-inf')
+        actions = state.getLegalActions(agentNumber)
+        bestAction = actions[0]
+
+        for action in actions:
+            previous_v = v
+            successorGameState = state.generateSuccessor(agentNumber, action)
+            # for leaf nodes or if the game finishes
+            if depth == 0 or successorGameState.isWin() or successorGameState.isLose():
+                v = max(v, self.evaluationFunction(successorGameState))
+            else:
+                v = max(v, self.beta_value(successorGameState,
+                                           alpha, beta, agentNumber+1, depth))
+            if v > beta:  # checking the pruning condition
+                return v, action
+            alpha = max(alpha, v)
+            if v != previous_v:
+                bestAction = action  # to store the best action
+        return v, bestAction
+
+    def beta_value(self, state, alpha, beta, agentNumber, depth):
+        if state.isWin() or state.isLose():
+            return self.evaluationFunction(state), 'none'
+
+        v = float('inf')
+        actions = state.getLegalActions(agentNumber)
+        flag = False
+        for action in actions:
+
+            successorGameState = state.generateSuccessor(agentNumber, action)
+            if depth == 0 or successorGameState.isWin() or successorGameState.isLose():
+                v = min(v, self.evaluationFunction(successorGameState))
+            elif agentNumber == (state.getNumAgents() - 1):
+                if flag == False:  # flag is used to avoid decreasing depth for the same level more than once
+                    depth = depth - 1
+                    flag = True
+                if depth == 0:  # if the last level is reached
+                    v = min(v, self.evaluationFunction(successorGameState))
+                else:
+                    v = min(v, self.alpha_value(
+                        successorGameState, alpha, beta, 0, depth)[0])
+
+            else:
+                v = min(v, self.beta_value(successorGameState,
+                                           alpha, beta, agentNumber+1, depth))
+            if v < alpha:  # checking the pruning condition
+                return v
+            beta = min(beta, v)
+
+        return v
+
+    # util.raiseNotDefined()
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
