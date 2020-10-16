@@ -199,12 +199,12 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         num_of_agents = gameState.getNumAgents()
-        # passing the initial values of alpha and beta as infinity.
+        # khoi tao gia tri alpha va beta bang vo cung ~
         value, action = self.alpha_value(
             gameState, float('-inf'), float('inf'), 0, self.depth)
         return action
 
-    # for pacman
+    # gia tri alpha khi toi luot pacman
     def alpha_value(self, state, alpha, beta, agentNumber, depth):
 
         if state.isWin() or state.isLose():
@@ -217,20 +217,25 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         for action in actions:
             previous_v = v
             successorGameState = state.generateSuccessor(agentNumber, action)
-            # for leaf nodes or if the game finishes
+            # kiem tra cac nodes la va ktra xem da ket thuc chua
             if depth == 0 or successorGameState.isWin() or successorGameState.isLose():
                 v = max(v, self.evaluationFunction(successorGameState))
             else:
                 v = max(v, self.beta_value(successorGameState,
                                            alpha, beta, agentNumber+1, depth))
-            if v > beta:  # checking the pruning condition
+            # kiem tra dieu kien cat tia alpha-beta pruning
+            if v > beta:
                 return v, action
             alpha = max(alpha, v)
+
+            # luu lai Action tot nhat
             if v != previous_v:
-                bestAction = action  # to store the best action
+                bestAction = action
         return v, bestAction
 
+    # gia tri beta
     def beta_value(self, state, alpha, beta, agentNumber, depth):
+
         if state.isWin() or state.isLose():
             return self.evaluationFunction(state), 'none'
 
@@ -243,10 +248,14 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             if depth == 0 or successorGameState.isWin() or successorGameState.isLose():
                 v = min(v, self.evaluationFunction(successorGameState))
             elif agentNumber == (state.getNumAgents() - 1):
-                if flag == False:  # flag is used to avoid decreasing depth for the same level more than once
+
+                # flag dung de tranh truong hop giam do sau cho cung 1 level nhieu hon 1 lan
+                if flag == False:
                     depth = depth - 1
                     flag = True
-                if depth == 0:  # if the last level is reached
+
+                # kiem tra da vuot qua level cuoi hay chua
+                if depth == 0:
                     v = min(v, self.evaluationFunction(successorGameState))
                 else:
                     v = min(v, self.alpha_value(
@@ -255,7 +264,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             else:
                 v = min(v, self.beta_value(successorGameState,
                                            alpha, beta, agentNumber+1, depth))
-            if v < alpha:  # checking the pruning condition
+            if v < alpha:  # kiem tra dieu kien cat tia alpha beta prunning
                 return v
             beta = min(beta, v)
 
@@ -277,7 +286,56 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
+        num_of_agents = gameState.getNumAgents()
+        depth1 = self.depth * num_of_agents
+
+        self.getAction1(gameState, depth1, num_of_agents)
+        return self.action1
         util.raiseNotDefined()
+
+    def getAction1(self, gameState, depth1, num_of_agents):
+        maxvalues = list()
+        chancevalues = list()
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        if depth1 > 0:
+            if depth1 % num_of_agents == 0:
+                agentNumber = 0
+
+            else:
+                agentNumber = num_of_agents-(depth1 % num_of_agents)
+
+            actions = gameState.getLegalActions(agentNumber)
+            for action in actions:
+                successorGameState = gameState.generateSuccessor(
+                    agentNumber, action)
+
+                if agentNumber == 0:
+                    maxvalues.append(
+                        (self.getAction1(successorGameState, depth1-1, num_of_agents), action))
+                    maximum = max(maxvalues)
+                    self.value_max = maximum[0]
+                    self.action1 = maximum[1]
+
+                else:
+                    chancevalues.append(
+                        (self.getAction1(successorGameState, depth1-1, num_of_agents), action))
+                    avg = 0.0
+                    for i in chancevalues:
+                        avg += chancevalues[chancevalues.index(i)][0]
+                    # Tra ve trung binh cac lan ghost di chuyen
+                    avg /= len(chancevalues)
+                    self.value_avg = avg
+
+            if agentNumber == 0:
+                return self.value_max
+            else:
+                return self.value_avg
+
+        else:
+            # nodes la tra ve evaluated score
+            return self.evaluationFunction(gameState)
 
 
 def betterEvaluationFunction(currentGameState):
